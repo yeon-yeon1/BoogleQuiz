@@ -241,20 +241,49 @@ export default function QuizSection() {
     setPersonTarget(x, y);
   }
 
-  // Jumps the character to sit just outside whichever edge of the stage is
-  // closer, at the vertical height of the tapped option — a discrete
-  // reaction to a selection rather than continuous tracking, so it works
-  // identically for mouse and touch.
-  function moveBesideOption(optionEl: HTMLElement) {
+  // Jumps the character to sit half-tucked onto a fixed corner/edge of the
+  // tapped option (the option's own z-10 keeps it drawn on top, so the
+  // character pokes out from underneath) rather than tracking wherever it
+  // happened to be standing: 1st option -> top-left corner, last option ->
+  // bottom-right corner, and the options in between alternate right/left
+  // edges (2nd -> right, 3rd -> left, ...).
+  function moveBesideOption(optionEl: HTMLElement, index: number, total: number) {
     const stage = stageRef.current;
     if (!stage) return;
     const stageRect = stage.getBoundingClientRect();
     const optRect = optionEl.getBoundingClientRect();
-    const centerY = optRect.top - stageRect.top + optRect.height / 2 - CHAR_SIZE / 2;
-    const isLeftSide = posX.current + CHAR_SIZE / 2 < stageRect.width / 2;
-    const edgeX = isLeftSide ? ATTENTION_EDGE_MARGIN : stageRect.width - CHAR_SIZE - ATTENTION_EDGE_MARGIN;
-    lookTilt.current = isLeftSide ? ATTENTION_TILT_DEG : -ATTENTION_TILT_DEG;
-    const { x, y } = clampToStage(edgeX, centerY, stageRect.width, stageRect.height);
+    const left = optRect.left - stageRect.left;
+    const right = optRect.right - stageRect.left;
+    const top = optRect.top - stageRect.top;
+    const bottom = optRect.bottom - stageRect.top;
+    const vCenter = top + optRect.height / 2;
+
+    const isFirst = index === 0;
+    const isLast = index === total - 1;
+
+    let cornerX: number;
+    let cornerY: number;
+    let onLeft: boolean;
+    if (isFirst) {
+      cornerX = left;
+      cornerY = top;
+      onLeft = true;
+    } else if (isLast) {
+      cornerX = right;
+      cornerY = bottom;
+      onLeft = false;
+    } else if (index % 2 === 1) {
+      cornerX = right;
+      cornerY = vCenter;
+      onLeft = false;
+    } else {
+      cornerX = left;
+      cornerY = vCenter;
+      onLeft = true;
+    }
+
+    lookTilt.current = onLeft ? ATTENTION_TILT_DEG : -ATTENTION_TILT_DEG;
+    const { x, y } = clampToStage(cornerX - CHAR_SIZE / 2, cornerY - CHAR_SIZE / 2, stageRect.width, stageRect.height);
     setPersonTarget(x, y);
   }
 
@@ -306,7 +335,7 @@ export default function QuizSection() {
   function handleSelect(index: number, e: React.MouseEvent<HTMLButtonElement>) {
     if (isReviewing || !question || index === liveSelection) return;
     setLiveSelection(index);
-    moveBesideOption(e.currentTarget);
+    moveBesideOption(e.currentTarget, index, question.options.length);
   }
 
   function handlePrevious() {
@@ -333,7 +362,9 @@ export default function QuizSection() {
       onPointerMove={handleMouseMove}
     >
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-6 px-6">
-        <h3 className="text-center text-lg font-bold text-gray-800">{question.prompt}</h3>
+        <h3 className="text-center text-lg font-bold text-gray-800">
+          <span className="text-orange-500">Q{viewIndex + 1}.</span> {question.prompt}
+        </h3>
 
         <div ref={optionsRef} className="flex w-full max-w-lg flex-col gap-3">
           {question.options.map((option, i) => {
