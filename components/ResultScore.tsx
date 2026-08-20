@@ -31,7 +31,6 @@ const FOLLOW_BUTTON_DELAY_MS = 3000;
 
 export default function ResultScore() {
   const quizAnswers = useKioskStore((s) => s.quizAnswers);
-  const reset = useKioskStore((s) => s.reset);
   const confirmFollow = useKioskStore((s) => s.confirmFollow);
   const submitted = useRef(false);
   const [showFollowButton, setShowFollowButton] = useState(false);
@@ -94,14 +93,6 @@ export default function ResultScore() {
         >
           {encouragementFor(ratio)}
         </motion.p>
-
-        <button
-          type="button"
-          onClick={reset}
-          className="mt-3 rounded-full border border-gray-300 px-8 py-3 text-base font-medium text-gray-500 hover:bg-gray-50"
-        >
-          처음으로
-        </button>
       </div>
 
       <motion.div

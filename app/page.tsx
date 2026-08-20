@@ -58,6 +58,7 @@ export default function Home() {
   const advanceToEngage = useKioskStore((s) => s.advanceToEngage);
   const advanceToQuiz = useKioskStore((s) => s.advanceToQuiz);
   const showResult = useKioskStore((s) => s.showResult);
+  const reset = useKioskStore((s) => s.reset);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [presencePhase, setPresencePhase] = useState<PresencePhase>("waking");
@@ -188,6 +189,18 @@ export default function Home() {
   return (
     <main className="relative h-dvh w-full touch-none overflow-hidden bg-linear-to-b from-orange-50 to-white">
       <CameraVision />
+
+      <button
+        type="button"
+        onClick={reset}
+        aria-label="처음 화면으로"
+        className="absolute right-30 top-4 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-gray-500 shadow-sm hover:bg-white"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+          <path d="M3 12a9 9 0 1 0 3-6.7" />
+          <path d="M3 4v5h5" />
+        </svg>
+      </button>
 
       <button
         type="button"

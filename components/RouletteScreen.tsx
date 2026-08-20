@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useKioskStore } from "@/lib/stateMachine";
 
 // Ported from the "굿즈 룰렛" design (claude.ai/design project
 // 8e04fe27-e50e-4dd5-a7ad-445b35f49a59, Goods Roulette.dc.html) — wedge
@@ -76,7 +75,6 @@ function pickWedge() {
  * walk-up visitor, so this is an honor-system gate, not a technical one).
  */
 export default function RouletteScreen() {
-  const reset = useKioskStore((s) => s.reset);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [won, setWon] = useState<{ n: string } | null>(null);
@@ -109,7 +107,7 @@ export default function RouletteScreen() {
 
   return (
     <div
-      className="flex h-full w-full flex-row items-center justify-center gap-16 px-16 py-8"
+      className="flex h-full w-full flex-row items-center justify-center gap-48 px-16 py-8"
       style={{ background: "#EFEDEA", fontFamily: "Pretendard, system-ui, sans-serif" }}
     >
       <div className="flex flex-col items-center gap-7">
@@ -134,7 +132,6 @@ export default function RouletteScreen() {
                 transition={{ type: "spring", stiffness: 300, damping: 18 }}
                 className="m-0 text-[17px] font-semibold text-[#F4744A]"
               >
-                🎉 당첨을 축하드려요!
               </motion.p>
             )}
           </AnimatePresence>
@@ -196,7 +193,7 @@ export default function RouletteScreen() {
             type="button"
             onClick={handleSpin}
             disabled={spinning || won !== null}
-            className="absolute left-1/2 top-1/2 z-20 flex h-26 w-26 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-none bg-white text-lg font-extrabold tracking-tight text-[#F4744A] shadow-[0_6px_16px_rgba(160,110,90,.32)] disabled:opacity-70"
+            className="absolute left-1/2 top-1/2 z-20 flex h-26 w-26 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-none bg-white text-lg font-extrabold tracking-tight text-[#F4744A] shadow-[0_6px_16px_rgba(160,110,90,.32)]"
           >
             START
           </button>
@@ -231,7 +228,7 @@ export default function RouletteScreen() {
 
             <div
               className="relative flex w-full flex-col items-center gap-3.5 rounded-[20px] border-2 border-dashed bg-white shadow-[0_14px_30px_rgba(160,120,100,0.2)]"
-              style={{ borderColor: "#FFC7AE", marginTop: -6, padding: "30px 26px 26px" }}
+              style={{ borderColor: "#FFC7AE", marginTop: -6, padding: "40px 56px 56px" }}
             >
               <div className="absolute -left-[11px] -top-[9px] h-[18px] w-[18px] rounded-full" style={{ background: "#EFEDEA" }} />
               <div className="absolute -right-[11px] -top-[9px] h-[18px] w-[18px] rounded-full" style={{ background: "#EFEDEA" }} />
@@ -244,21 +241,13 @@ export default function RouletteScreen() {
                 <span className="h-px flex-1" style={{ background: "#F3E2D8" }} />
               </div>
 
-              <div className="text-center text-[30px] font-extrabold tracking-[-1px] text-[#3A322E]">{won.n}</div>
+              <div className="mt-3 text-center text-[45px] font-extrabold tracking-[-1px] text-[#3A322E]">{won.n}</div>
 
               <div className="flex items-center gap-1.5 text-sm font-bold tracking-[-0.3px] text-[#C24E29]">
                 <span className="h-[5px] w-[5px] rounded-full" style={{ background: "#FFC94A" }} />
                 {BONUS_PRIZE} 1개를 함께 드립니다
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={reset}
-              className="mt-5 rounded-full border border-[#E3DCD6] bg-white px-8 py-3 text-base font-medium text-[#8A7F79] shadow-sm hover:bg-[#FAF8F6]"
-            >
-              처음으로
-            </button>
           </motion.div>
         )}
       </AnimatePresence>
