@@ -70,8 +70,31 @@ export default function Home() {
   // character still glancing at you as its eyes open, before it hops in.
   const IDLE_GAZE = { xBase: 10, xRange: 80, yBase: 15, yRange: 70, fallbackX: 18, fallbackY: 70 };
   const hasGaze = faceDetected && faceX !== null && faceY !== null;
-  const gazeX = hasGaze ? IDLE_GAZE.xBase + faceX! * IDLE_GAZE.xRange : IDLE_GAZE.fallbackX;
-  const gazeY = hasGaze ? IDLE_GAZE.yBase + faceY! * IDLE_GAZE.yRange : IDLE_GAZE.fallbackY;
+
+  // Tracking gaze 1:1 means the character only ever drifts one way, since
+  // a person watching it keeps their eyes roughly where it already is —
+  // it just rides the edge. Instead: the moment a gaze is (re)acquired,
+  // come to center once as a clear "I see you" beat, then afterward mirror
+  // away from wherever they're actually looking, like it's dodging eye
+  // contact — that's what actually produces back-and-forth movement.
+  const IDLE_GAZE_GREET_MS = 600;
+  const [idleGazeMode, setIdleGazeMode] = useState<"center" | "mirrored">("center");
+  useEffect(() => {
+    const toCenter = setTimeout(() => setIdleGazeMode("center"), 0);
+    if (!hasGaze) return () => clearTimeout(toCenter);
+    const toMirrored = setTimeout(() => setIdleGazeMode("mirrored"), IDLE_GAZE_GREET_MS);
+    return () => {
+      clearTimeout(toCenter);
+      clearTimeout(toMirrored);
+    };
+  }, [hasGaze]);
+
+  const centerX = IDLE_GAZE.xBase + IDLE_GAZE.xRange * 0.5;
+  const centerY = IDLE_GAZE.yBase + IDLE_GAZE.yRange * 0.5;
+  const gazeInputX = idleGazeMode === "mirrored" ? 1 - faceX! : faceX!;
+  const gazeInputY = idleGazeMode === "mirrored" ? 1 - faceY! : faceY!;
+  const gazeX = !hasGaze ? IDLE_GAZE.fallbackX : idleGazeMode === "center" ? centerX : IDLE_GAZE.xBase + gazeInputX * IDLE_GAZE.xRange;
+  const gazeY = !hasGaze ? IDLE_GAZE.fallbackY : idleGazeMode === "center" ? centerY : IDLE_GAZE.yBase + gazeInputY * IDLE_GAZE.yRange;
 
   const STAGE_LAYOUT: Partial<Record<KioskState, StageLayout>> = {
     IDLE: { x: gazeX, y: gazeY, size: 190, expression: "idle", sleeping: true },
