@@ -6,44 +6,67 @@ import { useKioskStore } from "@/lib/stateMachine";
 
 // Ported from the "굿즈 룰렛" design (claude.ai/design project
 // 8e04fe27-e50e-4dd5-a7ad-445b35f49a59, Goods Roulette.dc.html) — wedge
-// layout, colors, pointer, center START button and label placement all
-// match that file. The source design's own probabilities (로고 스티커
-// 50%, 브리스톨 스티커 30%, 부적카드 15%, 키캡 키링 5%) read as way too
-// repetitive in practice — one prize landing half the time — so those
-// were rebalanced here to 35/30/20/15 (still weighted, just less lopsided)
-// while keeping the same 4 prizes/colors and the same interleaved-wedge
-// look. Every spin also comes with a guaranteed pack of wet wipes on top,
-// shown as a small bonus tag rather than a wedge of its own — the source
-// design didn't include a result callout, so that part is this app's own
-// addition.
+// layout/sizes, colors, pointer, center START button and label placement
+// all match that file exactly (unlike an earlier version of this file,
+// which also resized the wedges to rebalance odds — that was reverted;
+// the wheel's look stays as designed).
+//
+// The actual odds are handled separately from the wedge angles below
+// (see PRIZE_WEIGHTS/pickWedge) rather than being read off wedge size the
+// way the source design did it: at the source's literal per-degree odds
+// (로고 스티커 50%, 브리스톨 스티커 30%, 부적카드 15%, 키캡 키링 5%) one
+// prize won half the time, which felt repetitive — landing still animates
+// to a real wedge of the chosen prize, it's just which prize gets chosen
+// that's reweighted to 35/30/20/15.
 const WEDGE_STYLE: Record<string, { fill: string; text: string; fontSize: number; width: number; radius: number }> = {
   "로고 스티커": { fill: "#F4744A", text: "#FFFFFF", fontSize: 14, width: 96, radius: 142 },
   "브리스톨 스티커": { fill: "#FFC7AE", text: "#8C3A1E", fontSize: 13, width: 92, radius: 142 },
   "부적카드": { fill: "#FFEFE6", text: "#C24E29", fontSize: 12, width: 74, radius: 142 },
-  "키캡 키링": { fill: "#FFC94A", text: "#FFFFFF", fontSize: 13, width: 90, radius: 142 },
+  "키캡 키링": { fill: "#FFC94A", text: "#FFFFFF", fontSize: 11, width: 64, radius: 148 },
 };
 
 const WEDGES = [
-  { a: 0, s: 31.5, n: "로고 스티커" },
-  { a: 31.5, s: 36, n: "브리스톨 스티커" },
-  { a: 67.5, s: 31.5, n: "로고 스티커" },
-  { a: 99, s: 36, n: "부적카드" },
-  { a: 135, s: 31.5, n: "로고 스티커" },
-  { a: 166.5, s: 36, n: "브리스톨 스티커" },
-  { a: 202.5, s: 54, n: "키캡 키링" },
-  { a: 256.5, s: 31.5, n: "로고 스티커" },
-  { a: 288, s: 36, n: "브리스톨 스티커" },
-  { a: 324, s: 36, n: "부적카드" },
+  { a: 0, s: 45, n: "로고 스티커" },
+  { a: 45, s: 36, n: "브리스톨 스티커" },
+  { a: 81, s: 45, n: "로고 스티커" },
+  { a: 126, s: 27, n: "부적카드" },
+  { a: 153, s: 45, n: "로고 스티커" },
+  { a: 198, s: 36, n: "브리스톨 스티커" },
+  { a: 234, s: 18, n: "키캡 키링" },
+  { a: 252, s: 45, n: "로고 스티커" },
+  { a: 297, s: 36, n: "브리스톨 스티커" },
+  { a: 333, s: 27, n: "부적카드" },
 ] as const;
+
+const PRIZE_WEIGHTS: Record<string, number> = {
+  "로고 스티커": 35,
+  "브리스톨 스티커": 30,
+  "부적카드": 20,
+  "키캡 키링": 15,
+};
 
 const BONUS_PRIZE = "물티슈";
 const WHEEL_SIZE = 440;
 const SPIN_TRANSITION = { duration: 4.6, ease: [0.16, 0.86, 0.09, 1] } as const;
 const SPIN_DURATION_MS = 4700;
 
+// Picks a prize by PRIZE_WEIGHTS first, then a random wedge instance of
+// that prize to actually land on — decoupling win odds from how large
+// that prize's slices are drawn.
 function pickWedge() {
-  const roll = Math.random() * 360;
-  return WEDGES.find((w) => roll >= w.a && roll < w.a + w.s) ?? WEDGES[0];
+  const totalWeight = Object.values(PRIZE_WEIGHTS).reduce((sum, w) => sum + w, 0);
+  let roll = Math.random() * totalWeight;
+  let chosenName: string = WEDGES[0].n;
+  for (const name in PRIZE_WEIGHTS) {
+    const weight = PRIZE_WEIGHTS[name];
+    if (roll < weight) {
+      chosenName = name;
+      break;
+    }
+    roll -= weight;
+  }
+  const candidates = WEDGES.filter((w) => w.n === chosenName);
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? WEDGES[0];
 }
 
 /**
@@ -200,7 +223,7 @@ export default function RouletteScreen() {
               style={{
                 background: "#F4744A",
                 clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%)",
-                padding: "13px 34px 26px",
+                padding: "13px 54px 26px",
               }}
             >
               당첨을 축하합니다
