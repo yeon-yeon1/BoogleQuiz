@@ -59,7 +59,7 @@ export default function SpeechBubble({
       <motion.div
         layout
         transition={{ duration: 0.15, ease: "easeOut" }}
-        className="relative w-max max-w-70 whitespace-pre-line rounded-[18px] border-2 border-[#f2946a] bg-white px-4 py-3 text-center shadow-lg"
+        className="relative w-max whitespace-pre-line rounded-[18px] border-2 border-[#f2946a] bg-white px-4 py-3 text-center shadow-lg"
       >
         <p className="text-sm font-semibold leading-snug text-[#55483f]">{shown}</p>
         {/* Two stacked border-triangles (not clip-path) so the outline
