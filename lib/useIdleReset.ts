@@ -26,9 +26,18 @@ export function useIdleReset() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // QUIZ shouldn't bounce someone back to the home screen just for
-    // taking their time picking an answer.
-    if (state === "IDLE" || state === "QUIZ") {
+    // Once the visitor has committed to the quiz, an idle timeout should
+    // never yank them back to the home screen — QUIZ shouldn't bounce
+    // someone for taking their time picking an answer, and LOADING/RESULT/
+    // ROULETTE are all downstream of a completed quiz where an unexpected
+    // reset would be jarring (mid-analysis, mid-follow-gate, or mid-prize).
+    if (
+      state === "IDLE" ||
+      state === "QUIZ" ||
+      state === "LOADING" ||
+      state === "RESULT" ||
+      state === "ROULETTE"
+    ) {
       if (timerRef.current) clearTimeout(timerRef.current);
       return;
     }
