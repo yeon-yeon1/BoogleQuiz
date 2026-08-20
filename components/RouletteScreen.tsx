@@ -178,31 +178,63 @@ export default function RouletteScreen() {
         </div>
       </div>
 
+      {/* "당첨을 축하합니다" ticket card — ported from the same Design
+          project's later revision, which replaced the plain pill result
+          with this ribbon+dashed-card layout. Kept to the roulette's right
+          side rather than reproducing the design file's own decorative
+          sparkle-burst backdrop, since we already have a real spinning
+          wheel on the left. */}
       <AnimatePresence>
         {won !== null && (
           <motion.div
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1, type: "spring", stiffness: 260, damping: 22 }}
-            className="flex w-72 flex-col items-center gap-3"
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
+            className="flex flex-col items-center"
+            style={{ width: 300 }}
           >
-            <p
-              className="rounded-2xl px-8 py-3 text-4xl font-extrabold shadow-lg"
-              style={{ backgroundColor: WEDGE_STYLE[won.n].fill, color: WEDGE_STYLE[won.n].text }}
+            <div
+              className="relative z-10 text-center text-[19px] font-extrabold tracking-[-0.4px] text-white shadow-[0_6px_14px_rgba(196,78,41,0.28)]"
+              style={{
+                background: "#F4744A",
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%)",
+                padding: "13px 34px 26px",
+              }}
             >
-              {won.n}
-            </p>
-            <p className="rounded-full border-2 border-[#FFD9C7] bg-white px-5 py-1.5 text-base font-semibold text-[#F4744A]">
-              + {BONUS_PRIZE} 증정
-            </p>
+              당첨을 축하합니다
+            </div>
+
+            <div
+              className="relative flex w-full flex-col items-center gap-3.5 rounded-[20px] border-2 border-dashed bg-white shadow-[0_14px_30px_rgba(160,120,100,0.2)]"
+              style={{ borderColor: "#FFC7AE", marginTop: -6, padding: "30px 26px 26px" }}
+            >
+              <div className="absolute -left-[11px] -top-[9px] h-[18px] w-[18px] rounded-full" style={{ background: "#EFEDEA" }} />
+              <div className="absolute -right-[11px] -top-[9px] h-[18px] w-[18px] rounded-full" style={{ background: "#EFEDEA" }} />
+
+              <span className="text-[11px] font-bold tracking-[2.4px] text-[#C9B7AC]">GOODS ROULETTE</span>
+
+              <div className="flex w-full items-center justify-center gap-2.5">
+                <span className="h-px flex-1" style={{ background: "#F3E2D8" }} />
+                <span className="h-[7px] w-[7px] rounded-full" style={{ background: "#FFC94A" }} />
+                <span className="h-px flex-1" style={{ background: "#F3E2D8" }} />
+              </div>
+
+              <div className="text-center text-[30px] font-extrabold tracking-[-1px] text-[#3A322E]">{won.n}</div>
+
+              <div className="flex items-center gap-1.5 text-sm font-bold tracking-[-0.3px] text-[#C24E29]">
+                <span className="h-[5px] w-[5px] rounded-full" style={{ background: "#FFC94A" }} />
+                {BONUS_PRIZE} 1개를 함께 드립니다
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={reset}
-              className="mt-2 rounded-full border border-[#E3DCD6] bg-white px-8 py-3 text-base font-medium text-[#8A7F79] shadow-sm hover:bg-[#FAF8F6]"
+              className="mt-5 rounded-full border border-[#E3DCD6] bg-white px-8 py-3 text-base font-medium text-[#8A7F79] shadow-sm hover:bg-[#FAF8F6]"
             >
               처음으로
             </button>
-            <p className="text-sm font-medium text-[#B5ACA5]">직원에게 화면을 보여주세요</p>
+            <p className="mt-2 text-sm font-medium text-[#B5ACA5]">직원에게 화면을 보여주세요</p>
           </motion.div>
         )}
       </AnimatePresence>
