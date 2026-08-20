@@ -84,105 +84,107 @@ export default function RouletteScreen() {
 
   return (
     <div
-      className="flex h-full w-full flex-col items-center justify-center gap-7 px-16 py-8"
+      className="flex h-full w-full flex-row items-center justify-center gap-16 px-16 py-8"
       style={{ background: "#EFEDEA", fontFamily: "Pretendard, system-ui, sans-serif" }}
     >
-      <div className="flex flex-col items-center gap-2.5">
-        <div className="rounded-[10px] bg-[#F4744A] px-6 py-2.5 text-3xl font-bold tracking-tight text-white">굿즈 룰렛</div>
-        <AnimatePresence mode="wait">
-          {won === null ? (
-            <motion.p
-              key="prompt"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="m-0 text-[17px] font-medium text-[#8A7F79]"
-            >
-              돌려서 굿즈 하나를 받아가세요
-            </motion.p>
-          ) : (
-            <motion.p
-              key="result"
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 18 }}
-              className="m-0 text-[17px] font-semibold text-[#F4744A]"
-            >
-              🎉 당첨을 축하드려요!
-            </motion.p>
-          )}
-        </AnimatePresence>
-      </div>
+      <div className="flex flex-col items-center gap-7">
+        <div className="flex flex-col items-center gap-2.5">
+          <div className="rounded-[10px] bg-[#F4744A] px-6 py-2.5 text-3xl font-bold tracking-tight text-white">굿즈 룰렛</div>
+          <AnimatePresence mode="wait">
+            {won === null ? (
+              <motion.p
+                key="prompt"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="m-0 text-[17px] font-medium text-[#8A7F79]"
+              >
+                돌려서 굿즈 하나를 받아가세요
+              </motion.p>
+            ) : (
+              <motion.p
+                key="result"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                className="m-0 text-[17px] font-semibold text-[#F4744A]"
+              >
+                🎉 당첨을 축하드려요!
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
 
-      <div className="relative shrink-0" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
-        <div
-          className="absolute -top-1.5 left-1/2 z-10 h-0 w-0 -translate-x-1/2 drop-shadow-md"
-          style={{ borderLeft: "13px solid transparent", borderRight: "13px solid transparent", borderTop: "52px solid #8A5A3B" }}
-        />
+        <div className="relative shrink-0" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
+          <div
+            className="absolute -top-1.5 left-1/2 z-10 h-0 w-0 -translate-x-1/2 drop-shadow-md"
+            style={{ borderLeft: "13px solid transparent", borderRight: "13px solid transparent", borderTop: "52px solid #8A5A3B" }}
+          />
 
-        <div
-          className="absolute inset-0 rounded-full bg-white"
-          style={{ boxShadow: "0 12px 32px rgba(160,120,100,.28), inset 0 0 0 10px #FFFFFF, inset 0 0 0 13px #FFD9C7" }}
-        />
+          <div
+            className="absolute inset-0 rounded-full bg-white"
+            style={{ boxShadow: "0 12px 32px rgba(160,120,100,.28), inset 0 0 0 10px #FFFFFF, inset 0 0 0 13px #FFD9C7" }}
+          />
 
-        <motion.div
-          className="absolute overflow-hidden rounded-full"
-          style={{ inset: 13, background: conicGradient }}
-          animate={{ rotate: rotation }}
-          transition={SPIN_TRANSITION}
-        />
+          <motion.div
+            className="absolute overflow-hidden rounded-full"
+            style={{ inset: 13, background: conicGradient }}
+            animate={{ rotate: rotation }}
+            transition={SPIN_TRANSITION}
+          />
 
-        {/* Labels live outside the spinning gradient layer: each one gets
-            its own pivot (rotates out to its wedge) plus an inner
-            counter-rotation of the same amount, so the text tracks the
-            wheel's position but never tilts — otherwise it spins along
-            with the wheel and ends up sideways once it stops. */}
-        {WEDGES.map((w, i) => {
-          const mid = w.a + w.s / 2;
-          const style = WEDGE_STYLE[w.n];
-          return (
-            <motion.div
-              key={i}
-              className="absolute left-1/2 top-1/2 h-0 w-0"
-              style={{ rotate: mid }}
-              animate={{ rotate: mid + rotation }}
-              transition={SPIN_TRANSITION}
-            >
+          {/* Labels live outside the spinning gradient layer: each one gets
+              its own pivot (rotates out to its wedge) plus an inner
+              counter-rotation of the same amount, so the text tracks the
+              wheel's position but never tilts — otherwise it spins along
+              with the wheel and ends up sideways once it stops. */}
+          {WEDGES.map((w, i) => {
+            const mid = w.a + w.s / 2;
+            const style = WEDGE_STYLE[w.n];
+            return (
               <motion.div
-                className="absolute left-1/2 -translate-x-1/2 whitespace-pre-line text-center font-extrabold leading-tight"
-                style={{
-                  top: -style.radius,
-                  width: style.width,
-                  fontSize: style.fontSize,
-                  color: style.text,
-                  rotate: -mid,
-                }}
-                animate={{ rotate: -(mid + rotation) }}
+                key={i}
+                className="absolute left-1/2 top-1/2 h-0 w-0"
+                style={{ rotate: mid }}
+                animate={{ rotate: mid + rotation }}
                 transition={SPIN_TRANSITION}
               >
-                {w.n.replace(" ", "\n")}
+                <motion.div
+                  className="absolute left-1/2 -translate-x-1/2 whitespace-pre-line text-center font-extrabold leading-tight"
+                  style={{
+                    top: -style.radius,
+                    width: style.width,
+                    fontSize: style.fontSize,
+                    color: style.text,
+                    rotate: -mid,
+                  }}
+                  animate={{ rotate: -(mid + rotation) }}
+                  transition={SPIN_TRANSITION}
+                >
+                  {w.n.replace(" ", "\n")}
+                </motion.div>
               </motion.div>
-            </motion.div>
-          );
-        })}
+            );
+          })}
 
-        <button
-          type="button"
-          onClick={handleSpin}
-          disabled={spinning || won !== null}
-          className="absolute left-1/2 top-1/2 z-20 flex h-26 w-26 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-none bg-white text-lg font-extrabold tracking-tight text-[#F4744A] shadow-[0_6px_16px_rgba(160,110,90,.32)] disabled:opacity-70"
-        >
-          START
-        </button>
+          <button
+            type="button"
+            onClick={handleSpin}
+            disabled={spinning || won !== null}
+            className="absolute left-1/2 top-1/2 z-20 flex h-26 w-26 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-none bg-white text-lg font-extrabold tracking-tight text-[#F4744A] shadow-[0_6px_16px_rgba(160,110,90,.32)] disabled:opacity-70"
+          >
+            START
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
         {won !== null && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="flex flex-col items-center gap-3"
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1, type: "spring", stiffness: 260, damping: 22 }}
+            className="flex w-72 flex-col items-center gap-3"
           >
             <p
               className="rounded-2xl px-8 py-3 text-4xl font-extrabold shadow-lg"
