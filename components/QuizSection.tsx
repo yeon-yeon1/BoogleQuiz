@@ -108,7 +108,6 @@ export default function QuizSection() {
   const question = QUIZ_QUESTIONS[viewIndex];
 
   const selectedIndex = isReviewing ? (quizAnswers[viewIndex]?.selectedIndex ?? null) : liveSelection;
-  const isRevealed = selectedIndex !== null;
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const optionsRef = useRef<HTMLDivElement | null>(null);
@@ -338,9 +337,10 @@ export default function QuizSection() {
 
         <div ref={optionsRef} className="flex w-full max-w-lg flex-col gap-3">
           {question.options.map((option, i) => {
-            const isCorrectOption = i === question.correctIndex;
-            const isWrongSelected = isRevealed && i === selectedIndex && !isCorrectOption;
-            const showCorrectMark = isRevealed && isCorrectOption;
+            // Right/wrong is never shown here — only "selected" — the
+            // score itself is only revealed on the RESULT screen at the
+            // end, not per-question as you go.
+            const isSelected = i === selectedIndex;
 
             return (
               <button
@@ -349,19 +349,15 @@ export default function QuizSection() {
                 disabled={isReviewing}
                 onClick={(e) => handleSelect(i, e)}
                 className={`flex items-center gap-3 rounded-2xl border-2 bg-white px-4 py-4 text-left text-base font-semibold shadow-md transition-colors ${
-                  showCorrectMark
-                    ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-                    : isWrongSelected
-                      ? "border-rose-300 bg-rose-50 text-rose-600"
-                      : "border-[#efe3da] text-[#55483f]"
+                  isSelected ? "border-orange-400 bg-orange-50 text-orange-700" : "border-[#efe3da] text-[#55483f]"
                 }`}
               >
                 <span
                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
-                    showCorrectMark ? "bg-emerald-500" : isWrongSelected ? "bg-rose-400" : "bg-[#cfc6bd]"
+                    isSelected ? "bg-orange-500" : "bg-[#cfc6bd]"
                   }`}
                 >
-                  {showCorrectMark ? "✓" : isWrongSelected ? "✗" : String.fromCharCode(65 + i)}
+                  {String.fromCharCode(65 + i)}
                 </span>
                 {option.label}
               </button>

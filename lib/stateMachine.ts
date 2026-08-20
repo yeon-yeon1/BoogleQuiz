@@ -46,12 +46,7 @@ interface KioskStore {
   reset: () => void;
 }
 
-export const useKioskStore = create<KioskStore>((set, get) => {
-  if (typeof window !== "undefined") {
-    // @ts-expect-error temp debug hook, removed before commit
-    window.__kioskStore = { getState: get };
-  }
-  return {
+export const useKioskStore = create<KioskStore>((set, get) => ({
   state: "IDLE",
   faceDetected: false,
   faceX: null,
@@ -143,8 +138,7 @@ export const useKioskStore = create<KioskStore>((set, get) => {
       quizIndex: 0,
     });
   },
-  };
-});
+}));
 
 export function getScoreResult(quizAnswers: QuizAnswerRecord[]): ScoreResult {
   return {

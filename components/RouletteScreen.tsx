@@ -1,25 +1,47 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useKioskStore } from "@/lib/stateMachine";
 
-// Placeholder prize copy — swap these for the real reward lineup before
-// launch. Segment colors just alternate the brand palette.
-const PRIZES = [
-  { label: "1등 상품", color: "#FF8253" },
-  { label: "꽝, 다음 기회에", color: "#FEF9EF" },
-  { label: "2등 상품", color: "#FFCEBB" },
-  { label: "쿠폰 증정", color: "#FEF9EF" },
-  { label: "꽝, 다음 기회에", color: "#FFA17D" },
-  { label: "3등 상품", color: "#FEF9EF" },
+// Ported from the "굿즈 룰렛" design (claude.ai/design project
+// 8e04fe27-e50e-4dd5-a7ad-445b35f49a59, Goods Roulette.dc.html) — wedge
+// angles/colors/probabilities, pointer, center START button and label
+// placement all match that file. Probability is NOT uniform per prize:
+// it's proportional to each wedge's angle, same as the source design
+// (로고 스티커 gets 4 wedges = 50%, 브리스톨 스티커 3 = 30%, 부적카드 2 =
+// 15%, 키캡 키링 1 = 5%). Every spin also comes with a guaranteed pack of
+// wet wipes on top, shown as a small bonus tag rather than a wedge of its
+// own — the source design didn't include a result callout, so that part
+// is this app's own addition.
+const WEDGE_STYLE: Record<string, { fill: string; text: string; fontSize: number; width: number; radius: number }> = {
+  "로고 스티커": { fill: "#F4744A", text: "#FFFFFF", fontSize: 14, width: 96, radius: 142 },
+  "브리스톨 스티커": { fill: "#FFC7AE", text: "#8C3A1E", fontSize: 13, width: 92, radius: 142 },
+  "부적카드": { fill: "#FFEFE6", text: "#C24E29", fontSize: 12, width: 74, radius: 142 },
+  "키캡 키링": { fill: "#FFC94A", text: "#FFFFFF", fontSize: 11, width: 64, radius: 148 },
+};
+
+const WEDGES = [
+  { a: 0, s: 45, n: "로고 스티커" },
+  { a: 45, s: 36, n: "브리스톨 스티커" },
+  { a: 81, s: 45, n: "로고 스티커" },
+  { a: 126, s: 27, n: "부적카드" },
+  { a: 153, s: 45, n: "로고 스티커" },
+  { a: 198, s: 36, n: "브리스톨 스티커" },
+  { a: 234, s: 18, n: "키캡 키링" },
+  { a: 252, s: 45, n: "로고 스티커" },
+  { a: 297, s: 36, n: "브리스톨 스티커" },
+  { a: 333, s: 27, n: "부적카드" },
 ] as const;
 
-const SEGMENT_DEG = 360 / PRIZES.length;
-const SPIN_SPRING = { type: "spring", stiffness: 40, damping: 14, mass: 1.2 } as const;
+const BONUS_PRIZE = "물티슈";
+const WHEEL_SIZE = 440;
+const SPIN_TRANSITION = { duration: 4.6, ease: [0.16, 0.86, 0.09, 1] } as const;
+const SPIN_DURATION_MS = 4700;
 
-function pickPrizeIndex() {
-  return Math.floor(Math.random() * PRIZES.length);
+function pickWedge() {
+  const roll = Math.random() * 360;
+  return WEDGES.find((w) => roll >= w.a && roll < w.a + w.s) ?? WEDGES[0];
 }
 
 /**
@@ -32,11 +54,11 @@ export default function RouletteScreen() {
   const reset = useKioskStore((s) => s.reset);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [wonIndex, setWonIndex] = useState<number | null>(null);
+  const [won, setWon] = useState<{ n: string } | null>(null);
   const spunOnce = useRef(false);
 
   const conicGradient = useMemo(() => {
-    const stops = PRIZES.map((p, i) => `${p.color} ${i * SEGMENT_DEG}deg ${(i + 1) * SEGMENT_DEG}deg`);
+    const stops = WEDGES.map((w) => `${WEDGE_STYLE[w.n].fill} ${w.a}deg ${w.a + w.s}deg`);
     return `conic-gradient(${stops.join(", ")})`;
   }, []);
 
@@ -45,75 +67,143 @@ export default function RouletteScreen() {
     spunOnce.current = true;
     setSpinning(true);
 
-    const target = pickPrizeIndex();
-    // Land the target segment's center under the top pointer: offset from
-    // 12 o'clock, plus several full turns so the spin reads as a real spin.
-    const landingDeg = 360 - (target * SEGMENT_DEG + SEGMENT_DEG / 2);
-    const extraTurns = 5 * 360;
-    setRotation((prev) => prev - (prev % 360) + extraTurns + landingDeg);
+    const w = pickWedge();
+    // Land somewhere in the middle 60% of the wedge (never right at an
+    // edge), plus several full turns so the spin reads as a real spin.
+    const target = w.a + w.s * (0.2 + Math.random() * 0.6);
+    setRotation((prev) => {
+      const delta = (((-target - prev) % 360) + 360) % 360;
+      return prev + 360 * 6 + delta;
+    });
 
     setTimeout(() => {
       setSpinning(false);
-      setWonIndex(target);
-    }, 3200);
+      setWon({ n: w.n });
+    }, SPIN_DURATION_MS);
   }
 
   return (
-    <div className="flex h-full w-full flex-row items-center justify-center gap-16 px-16">
-      <div className="relative shrink-0">
-        <div
-          className="absolute left-1/2 -top-3 z-10 h-6 w-6 -translate-x-1/2 rotate-180"
-          style={{ clipPath: "polygon(50% 100%, 0 0, 100% 0)", backgroundColor: "#55483f" }}
-        />
-        <motion.div
-          className="relative h-80 w-80 rounded-full border-8 border-white shadow-xl"
-          style={{ background: conicGradient }}
-          animate={{ rotate: rotation }}
-          transition={SPIN_SPRING}
-        >
-          {PRIZES.map((p, i) => (
-            <div
-              key={i}
-              className="absolute left-1/2 top-1/2 w-28 text-center text-xs font-bold text-[#55483f]"
-              style={{
-                transform: `rotate(${i * SEGMENT_DEG + SEGMENT_DEG / 2}deg) translate(0, -108px) rotate(0deg)`,
-                transformOrigin: "0 0",
-              }}
+    <div
+      className="flex h-full w-full flex-col items-center justify-center gap-7 px-16 py-8"
+      style={{ background: "#EFEDEA", fontFamily: "Pretendard, system-ui, sans-serif" }}
+    >
+      <div className="flex flex-col items-center gap-2.5">
+        <div className="rounded-[10px] bg-[#F4744A] px-6 py-2.5 text-3xl font-bold tracking-tight text-white">굿즈 룰렛</div>
+        <AnimatePresence mode="wait">
+          {won === null ? (
+            <motion.p
+              key="prompt"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="m-0 text-[17px] font-medium text-[#8A7F79]"
             >
-              {p.label}
-            </div>
-          ))}
-        </motion.div>
+              돌려서 굿즈 하나를 받아가세요
+            </motion.p>
+          ) : (
+            <motion.p
+              key="result"
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
+              className="m-0 text-[17px] font-semibold text-[#F4744A]"
+            >
+              🎉 당첨을 축하드려요!
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="flex w-72 flex-col items-center gap-5 text-center">
-        {wonIndex === null ? (
-          <>
-            <h2 className="text-2xl font-bold text-gray-800">룰렛을 돌려보세요!</h2>
-            <p className="text-sm font-medium text-gray-500">버튼을 누르면 한 번 돌아가요</p>
-            <button
-              type="button"
-              onClick={handleSpin}
-              disabled={spinning}
-              className="rounded-full bg-orange-500 px-8 py-3 text-base font-semibold text-white shadow-md hover:bg-orange-600 disabled:opacity-50"
+      <div className="relative shrink-0" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
+        <div
+          className="absolute -top-1.5 left-1/2 z-10 h-0 w-0 -translate-x-1/2 drop-shadow-md"
+          style={{ borderLeft: "13px solid transparent", borderRight: "13px solid transparent", borderTop: "52px solid #8A5A3B" }}
+        />
+
+        <div
+          className="absolute inset-0 rounded-full bg-white"
+          style={{ boxShadow: "0 12px 32px rgba(160,120,100,.28), inset 0 0 0 10px #FFFFFF, inset 0 0 0 13px #FFD9C7" }}
+        />
+
+        <motion.div
+          className="absolute overflow-hidden rounded-full"
+          style={{ inset: 13, background: conicGradient }}
+          animate={{ rotate: rotation }}
+          transition={SPIN_TRANSITION}
+        />
+
+        {/* Labels live outside the spinning gradient layer: each one gets
+            its own pivot (rotates out to its wedge) plus an inner
+            counter-rotation of the same amount, so the text tracks the
+            wheel's position but never tilts — otherwise it spins along
+            with the wheel and ends up sideways once it stops. */}
+        {WEDGES.map((w, i) => {
+          const mid = w.a + w.s / 2;
+          const style = WEDGE_STYLE[w.n];
+          return (
+            <motion.div
+              key={i}
+              className="absolute left-1/2 top-1/2 h-0 w-0"
+              style={{ rotate: mid }}
+              animate={{ rotate: mid + rotation }}
+              transition={SPIN_TRANSITION}
             >
-              {spinning ? "돌아가는 중..." : "룰렛 돌리기"}
-            </button>
-          </>
-        ) : (
-          <>
-            <h2 className="text-2xl font-bold text-gray-800">{PRIZES[wonIndex].label}</h2>
-            <p className="text-sm font-medium text-gray-500">직원에게 화면을 보여주세요</p>
+              <motion.div
+                className="absolute left-1/2 -translate-x-1/2 whitespace-pre-line text-center font-extrabold leading-tight"
+                style={{
+                  top: -style.radius,
+                  width: style.width,
+                  fontSize: style.fontSize,
+                  color: style.text,
+                  rotate: -mid,
+                }}
+                animate={{ rotate: -(mid + rotation) }}
+                transition={SPIN_TRANSITION}
+              >
+                {w.n.replace(" ", "\n")}
+              </motion.div>
+            </motion.div>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={handleSpin}
+          disabled={spinning || won !== null}
+          className="absolute left-1/2 top-1/2 z-20 flex h-26 w-26 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-none bg-white text-lg font-extrabold tracking-tight text-[#F4744A] shadow-[0_6px_16px_rgba(160,110,90,.32)] disabled:opacity-70"
+        >
+          START
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {won !== null && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-col items-center gap-3"
+          >
+            <p
+              className="rounded-2xl px-8 py-3 text-4xl font-extrabold shadow-lg"
+              style={{ backgroundColor: WEDGE_STYLE[won.n].fill, color: WEDGE_STYLE[won.n].text }}
+            >
+              {won.n}
+            </p>
+            <p className="rounded-full border-2 border-[#FFD9C7] bg-white px-5 py-1.5 text-base font-semibold text-[#F4744A]">
+              + {BONUS_PRIZE} 증정
+            </p>
             <button
               type="button"
               onClick={reset}
-              className="rounded-full border border-gray-300 px-6 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50"
+              className="mt-2 rounded-full border border-[#E3DCD6] bg-white px-8 py-3 text-base font-medium text-[#8A7F79] shadow-sm hover:bg-[#FAF8F6]"
             >
               처음으로
             </button>
-          </>
+            <p className="text-sm font-medium text-[#B5ACA5]">직원에게 화면을 보여주세요</p>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

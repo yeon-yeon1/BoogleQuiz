@@ -203,7 +203,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={advanceToQuiz}
-                className="rounded-full bg-orange-500 px-8 py-3 text-base font-semibold text-white shadow-md hover:bg-orange-600"
+                className="mt-8 rounded-2xl bg-orange-500 px-28 py-3 text-base font-semibold text-white shadow-md"
               >
                 퀴즈 시작하기
               </button>

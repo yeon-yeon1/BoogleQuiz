@@ -53,7 +53,7 @@ export default function CharacterStage({
 }: CharacterStageProps) {
   return (
     <motion.div
-      className={`absolute ${className ?? ""}`}
+      className={`absolute pointer-events-none ${className ?? ""}`}
       style={{ zIndex }}
       animate={{ left: `${xPercent}%`, top: `${yPercent}%` }}
       transition={positionTransition ?? DEFAULT_POSITION_TRANSITION}

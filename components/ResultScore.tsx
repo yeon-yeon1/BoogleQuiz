@@ -66,7 +66,7 @@ export default function ResultScore() {
   }, []);
 
   return (
-    <div className="flex h-full w-full flex-row items-center justify-between gap-47 px-24">
+    <div className="flex h-full w-full flex-row items-center justify-center gap-47 px-24">
       <div className="flex flex-col items-center gap-5">
         <motion.div
           initial={{ opacity: 0, scale: 0.6 }}
