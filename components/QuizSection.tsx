@@ -126,6 +126,11 @@ export default function QuizSection() {
   const lastPersonY = useRef<number | null>(null);
   const attentionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readyRef = useRef(false);
+  // Mirrors `selectedIndex !== null` for the attention-switch timer (which
+  // runs outside React render) to check — once an option's picked, the
+  // idle peek-at-the-quiz wandering should stop entirely instead of still
+  // pulling the character back and forth between the dock and the edge.
+  const hasSelectionRef = useRef(false);
 
   const mvX = useMotionValue(0);
   const mvY = useMotionValue(0);
@@ -161,6 +166,13 @@ export default function QuizSection() {
     const delay = randomBetween(ATTENTION_SWITCH_DELAY.min, ATTENTION_SWITCH_DELAY.max);
 
     attentionTimerRef.current = setTimeout(() => {
+      // Once docked at a picked option, just stay there — keep re-checking
+      // instead of wandering off, so it snaps back the moment the
+      // selection clears (new question, "이전"/"다음", etc).
+      if (hasSelectionRef.current) {
+        scheduleAttentionSwitch();
+        return;
+      }
       const stage = stageRef.current;
       if (!stage) return;
       const stageRect = stage.getBoundingClientRect();
@@ -192,6 +204,10 @@ export default function QuizSection() {
       );
     }, delay);
   }
+
+  useEffect(() => {
+    hasSelectionRef.current = selectedIndex !== null;
+  }, [selectedIndex]);
 
   // Mount: center the character, start the attention-switch loop.
   useEffect(() => {
@@ -241,12 +257,17 @@ export default function QuizSection() {
     setPersonTarget(x, y);
   }
 
-  // Jumps the character to sit half-tucked onto a fixed corner/edge of the
-  // tapped option (the option's own z-10 keeps it drawn on top, so the
-  // character pokes out from underneath) rather than tracking wherever it
-  // happened to be standing: 1st option -> top-left corner, last option ->
-  // bottom-right corner, and the options in between alternate right/left
-  // edges (2nd -> right, 3rd -> left, ...).
+  // Only a sliver of the character should actually duck under the option
+  // (~5% of its own size) rather than sitting half-buried in it.
+  const OVERLAP_RATIO = 0.05;
+  const DOCK_OUTSET = CHAR_SIZE / 2 - CHAR_SIZE * OVERLAP_RATIO;
+
+  // Jumps the character to sit just outside a fixed corner/edge of the
+  // tapped option, poking a little of itself underneath (the option's own
+  // z-10 keeps it drawn on top) rather than tracking wherever it happened
+  // to be standing: 1st option -> top-left corner, last option -> bottom-
+  // right corner, and the options in between alternate right/left edges
+  // (2nd -> right, 3rd -> left, ...).
   function moveBesideOption(optionEl: HTMLElement, index: number, total: number) {
     const stage = stageRef.current;
     if (!stage) return;
@@ -261,29 +282,33 @@ export default function QuizSection() {
     const isFirst = index === 0;
     const isLast = index === total - 1;
 
-    let cornerX: number;
-    let cornerY: number;
+    let centerX: number;
+    let centerY: number;
     let onLeft: boolean;
     if (isFirst) {
-      cornerX = left;
-      cornerY = top;
+      centerX = left - DOCK_OUTSET;
+      centerY = top - DOCK_OUTSET;
       onLeft = true;
     } else if (isLast) {
-      cornerX = right;
-      cornerY = bottom;
+      centerX = right + DOCK_OUTSET;
+      centerY = bottom + DOCK_OUTSET;
       onLeft = false;
     } else if (index % 2 === 1) {
-      cornerX = right;
-      cornerY = vCenter;
+      centerX = right + DOCK_OUTSET;
+      centerY = vCenter;
       onLeft = false;
     } else {
-      cornerX = left;
-      cornerY = vCenter;
+      centerX = left - DOCK_OUTSET;
+      centerY = vCenter;
       onLeft = true;
     }
 
+    // A selection always wins immediately, even if the idle attention-peek
+    // was mid-flight to a stage edge — docking shouldn't have to wait for
+    // that to finish before it takes over.
+    attentionMode.current = "person";
     lookTilt.current = onLeft ? ATTENTION_TILT_DEG : -ATTENTION_TILT_DEG;
-    const { x, y } = clampToStage(cornerX - CHAR_SIZE / 2, cornerY - CHAR_SIZE / 2, stageRect.width, stageRect.height);
+    const { x, y } = clampToStage(centerX - CHAR_SIZE / 2, centerY - CHAR_SIZE / 2, stageRect.width, stageRect.height);
     setPersonTarget(x, y);
   }
 
